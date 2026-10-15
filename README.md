@@ -4,13 +4,6 @@ Pick one folder for all your Minecraft screenshots.
 
 The first time you press F2, a window asks "What folder do you want to put your screenshots in?" After you choose a folder, every screenshot you already have is moved there, and every new screenshot is saved straight into it. The window only appears once. After that, F2 works as it always has.
 
-## Requirements
-
-- Minecraft 26.3
-- Fabric Loader 0.19.5 or newer
-- Fabric API
-- Java 25
-
 SS-Save-Point is a client mod, so it is not needed on servers. Mod Menu is optional.
 
 ## Changing your folder
