@@ -8,8 +8,9 @@
 		"LwkFurina"
 	],
 	"contact": {
-		"homepage": "https://github.com/LwkFurina",
-		"sources": "https://github.com/LwkFurina"
+		"homepage": "https://github.com/LwkFurina/SS-Save-Point",
+		"sources": "https://github.com/LwkFurina/SS-Save-Point",
+		"issues": "https://github.com/LwkFurina/SS-Save-Point/issues"
 	},
 	"license": "MIT",
 	"icon": "assets/ss-save-point/icon.png",
