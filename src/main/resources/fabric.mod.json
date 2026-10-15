@@ -1,0 +1,38 @@
+{
+	"schemaVersion": 1,
+	"id": "ss-save-point",
+	"version": "${version}",
+	"name": "SS-Save-Point",
+	"description": "Choose one folder for all your screenshots. Press F2 the first time and pick a folder, and every old and new screenshot goes there.",
+	"authors": [
+		"LwkFurina"
+	],
+	"contact": {
+		"homepage": "https://github.com/LwkFurina",
+		"sources": "https://github.com/LwkFurina"
+	},
+	"license": "MIT",
+	"icon": "assets/ss-save-point/icon.png",
+	"environment": "client",
+	"entrypoints": {
+		"main": [
+			"lwkfurina.sssavepoint.SSSavePoint"
+		],
+		"client": [
+			"lwkfurina.sssavepoint.client.SSSavePointClient"
+		]
+	},
+	"mixins": [
+		"ss-save-point.mixins.json",
+		{
+			"config": "ss-save-point.client.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.19.5",
+		"minecraft": "~26.3",
+		"java": ">=25",
+		"fabric-api": "*"
+	}
+}
