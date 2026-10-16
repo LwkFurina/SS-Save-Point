@@ -1,8 +1,6 @@
 # SS-Save-Point
 
-Pick one folder for all your Minecraft screenshots.
-
-The first time you press F2, a window asks "What folder do you want to put your screenshots in?" After you choose a folder, every screenshot you already have is moved there, and every new screenshot is saved straight into it. The window only appears once. After that, F2 works as it always has.
+This fabric mod puts your Minecraft screenshots exactly where you want them. The first time you press F2, a window asks “What folder do you want to put your screenshots in?” You may choose a folder and every screenshot you already have will be moved there, and all future screenshots will be automatically moved to the new location. The window only appears once, and after that F2 works as it always has, with Minecraft’s usual “saved as” message in chat. If you close the window without choosing, that screenshot is saved the normal way and the window appears again on your next F2 press.
 
 SS-Save-Point is a client mod, so it is not needed on servers. Mod Menu is optional.
 
