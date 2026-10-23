@@ -1,19 +1,19 @@
 package lwkfurina.sssavepoint.client;
 
-import java.awt.GraphicsEnvironment;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.swing.JFileChooser;
-import javax.swing.JFrame;
-import javax.swing.UIManager;
 
 import lwkfurina.sssavepoint.SSSavePoint;
 import net.fabricmc.loader.api.FabricLoader;
@@ -22,7 +22,7 @@ import net.minecraft.util.Util;
 
 public final class SaveFolder {
 	private static final String KEY = "folder";
-	private static final String QUESTION = "What folder do you want to put your screenshots in?";
+	private static final String PICKER_CLASS = "lwkfurina.sssavepoint.client.FolderPicker";
 	private static Path chosen = null;
 	private static boolean loaded = false;
 
@@ -66,45 +66,73 @@ public final class SaveFolder {
 		}
 	}
 
+	/**
+	 * Opens the folder window in its own small Java process, so it does not
+	 * matter how the game's own Java was started. Returns null if the player
+	 * cancels or if the window cannot be shown.
+	 */
 	private static Path askForFolder(Path startIn) {
-		System.setProperty("java.awt.headless", "false");
-
-		if (GraphicsEnvironment.isHeadless()) {
-			SSSavePoint.LOGGER.warn("SS-Save-Point cannot show a window on this computer");
-			return null;
-		}
-
-		JFrame parent = null;
+		Process process = null;
 		try {
-			try {
-				UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-			} catch (Exception ignored) {
-				// the default look is fine if the system look is not available
+			String java = ProcessHandle.current().info().command()
+				.orElse(Path.of(System.getProperty("java.home"), "bin", "java").toString());
+
+			String classpath = FabricLoader.getInstance()
+				.getModContainer(SSSavePoint.MOD_ID)
+				.map(container -> container.getOrigin().getPaths().stream()
+					.map(Path::toString)
+					.collect(Collectors.joining(File.pathSeparator)))
+				.orElse("");
+			if (classpath.isBlank()) {
+				SSSavePoint.LOGGER.warn("SS-Save-Point could not find its own files");
+				return null;
 			}
 
-			parent = new JFrame();
-			parent.setUndecorated(true);
-			parent.setAlwaysOnTop(true);
-			parent.setLocationRelativeTo(null);
-			parent.setVisible(true);
+			ProcessBuilder builder = new ProcessBuilder(
+				java,
+				"-Djava.awt.headless=false",
+				"-cp",
+				classpath,
+				PICKER_CLASS,
+				startIn.toAbsolutePath().toString()
+			);
+			builder.redirectErrorStream(true);
+			process = builder.start();
 
-			JFileChooser chooser = new JFileChooser(startIn.toFile());
-			chooser.setDialogTitle(QUESTION);
-			chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-			chooser.setApproveButtonText("Choose this folder");
+			final Process started = process;
+			CompletableFuture<byte[]> reader = CompletableFuture.supplyAsync(() -> {
+				try (InputStream in = started.getInputStream()) {
+					return in.readAllBytes();
+				} catch (IOException e) {
+					return new byte[0];
+				}
+			});
 
-			int result = chooser.showOpenDialog(parent);
-			if (result == JFileChooser.APPROVE_OPTION && chooser.getSelectedFile() != null) {
-				return chooser.getSelectedFile().toPath();
+			byte[] bytes = reader.get(10, TimeUnit.MINUTES);
+			int exitCode = started.waitFor();
+			String output = new String(bytes, StandardCharsets.UTF_8).trim();
+
+			if (exitCode == 1) {
+				// the player closed the window without choosing
+				return null;
 			}
+			if (exitCode != 0 || output.isEmpty()) {
+				SSSavePoint.LOGGER.warn("SS-Save-Point folder window failed (exit code " + exitCode + "): " + output);
+				return null;
+			}
+
+			String[] lines = output.split("\\R");
+			Path picked = Path.of(lines[lines.length - 1].trim());
+			return Files.isDirectory(picked) ? picked : null;
+		} catch (Exception e) {
+			if (e instanceof InterruptedException) {
+				Thread.currentThread().interrupt();
+			}
+			if (process != null) {
+				process.destroyForcibly();
+			}
+			SSSavePoint.LOGGER.warn("SS-Save-Point could not show the folder window", e);
 			return null;
-		} catch (Throwable t) {
-			SSSavePoint.LOGGER.warn("SS-Save-Point could not show the folder window", t);
-			return null;
-		} finally {
-			if (parent != null) {
-				parent.dispose();
-			}
 		}
 	}
 
